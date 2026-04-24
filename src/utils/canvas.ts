@@ -3,20 +3,27 @@ export type CanvasSize = {
   height: number
 }
 
+export type PortraitTransform = {
+  zoom: number
+  offsetXPercent: number
+  offsetYPercent: number
+}
+
 const drawCoverImage = (
   context: CanvasRenderingContext2D,
   image: HTMLImageElement,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
+  transform: PortraitTransform
 ) => {
   const sourceWidth = image.width
   const sourceHeight = image.height
-  const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight)
+  const scale = Math.max(canvasWidth / sourceWidth, canvasHeight / sourceHeight) * transform.zoom
 
   const drawWidth = sourceWidth * scale
   const drawHeight = sourceHeight * scale
-  const offsetX = (canvasWidth - drawWidth) / 2
-  const offsetY = (canvasHeight - drawHeight) / 2
+  const offsetX = (canvasWidth - drawWidth) / 2 + (transform.offsetXPercent / 100) * canvasWidth
+  const offsetY = (canvasHeight - drawHeight) / 2 + (transform.offsetYPercent / 100) * canvasHeight
 
   context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
 }
@@ -35,7 +42,8 @@ const canvasToBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
 export const composeAvatarFrame = async (
   portrait: HTMLImageElement,
   frame: HTMLImageElement,
-  size: CanvasSize
+  size: CanvasSize,
+  transform: PortraitTransform
 ): Promise<Blob> => {
   const canvas = document.createElement('canvas')
   canvas.width = size.width
@@ -49,7 +57,7 @@ export const composeAvatarFrame = async (
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = 'high'
 
-  drawCoverImage(context, portrait, size.width, size.height)
+  drawCoverImage(context, portrait, size.width, size.height, transform)
   context.drawImage(frame, 0, 0, size.width, size.height)
 
   return canvasToBlob(canvas)
